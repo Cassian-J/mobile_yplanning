@@ -1,5 +1,5 @@
-import '../services/auth_services.dart';
-import '../services/hash_helper.dart';
+import '../services/auth_service.dart';
+import '../helper/hash_helper.dart';
 
 class AuthController {
   bool loading = false;
@@ -38,7 +38,6 @@ class AuthController {
         username: username,
         name: name,
         surname: surname,
-        colorId: 0,
         password: HashHelper.hashString(password),
       );
     } finally {

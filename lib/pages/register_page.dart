@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
-import 'login_pages.dart';
+import '../helper/token_storage.dart';
+import 'user_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,8 +19,13 @@ class _RegisterPageState extends State<RegisterPage> {
   final surnameController = TextEditingController();
   final passwordController = TextEditingController();
 
+  bool loading = false;
+
   Future<void> register() async {
+    setState(() => loading = true);
+
     try {
+      // 🔥 1. register via controller
       await controller.register(
         email: emailController.text,
         username: usernameController.text,
@@ -28,15 +34,21 @@ class _RegisterPageState extends State<RegisterPage> {
         password: passwordController.text,
       );
 
+      // 🔥 2. récupérer userId depuis secure storage
+      final userId = await TokenStorage.getUserId();
+
+      if (userId == null) {
+        throw Exception("UserId introuvable après register");
+      }
+
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Compte créé")),
-      );
-
+      // 🔥 3. navigation vers user page
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+        MaterialPageRoute(
+          builder: (_) => UserPage(userId: userId),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -44,7 +56,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
     }
 
-    setState(() {});
+    setState(() => loading = false);
   }
 
   @override
@@ -55,15 +67,17 @@ class _RegisterPageState extends State<RegisterPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email")),
-            TextField(controller: usernameController, decoration: const InputDecoration(labelText: "Pseudo")),
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Nom")),
-            TextField(controller: surnameController, decoration: const InputDecoration(labelText: "Prénom")),
-            TextField(controller: passwordController, decoration: const InputDecoration(labelText: "Mot de passe"), obscureText: true),
+            TextField(controller: emailController),
+            TextField(controller: usernameController),
+            TextField(controller: nameController),
+            TextField(controller: surnameController),
+            TextField(controller: passwordController, obscureText: true),
+
             const SizedBox(height: 20),
+
             ElevatedButton(
-              onPressed: register,
-              child: const Text("Sign up"),
+              onPressed: loading ? null : register,
+              child: Text(loading ? "Loading..." : "Sign up"),
             ),
           ],
         ),

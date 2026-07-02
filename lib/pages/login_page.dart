@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
-import 'register_pages.dart';
+import 'register_page.dart';
+import '../helper/token_storage.dart';
+import 'user_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,26 +17,53 @@ class _LoginPageState extends State<LoginPage> {
   final loginController = TextEditingController();
   final passwordController = TextEditingController();
 
-  Future<void> login() async {
-    try {
-      await controller.login(
-        loginInput: loginController.text,
-        password: passwordController.text,
-      );
 
-      if (!mounted) return;
+Future<void> login() async {
+  try {
+    await controller.login(
+      loginInput: loginController.text,
+      password: passwordController.text,
+    );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login réussi")),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur login: $e")),
-      );
+    if (!mounted) return;
+
+    // 🔥 SnackBar
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Login réussi")),
+    );
+
+    // 🔥 petit délai pour laisser voir le SnackBar
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (!mounted) return;
+
+    // 🔥 récupération userId
+    final userId = await TokenStorage.getUserId();
+
+    if (userId == null) {
+      throw Exception("UserId introuvable");
     }
 
+    if (!mounted) return;
+
+    // 🔥 navigation
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UserPage(userId: userId),
+      ),
+    );
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Erreur login: $e")),
+    );
+  }
+
+  if (mounted) {
     setState(() {});
   }
+}
 
   @override
   Widget build(BuildContext context) {

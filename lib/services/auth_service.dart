@@ -1,5 +1,5 @@
-import 'api_services.dart';
-import 'token_storage.dart';
+import 'api_service.dart';
+import '../helper/token_storage.dart';
 
 class AuthService {
   /// LOGIN
@@ -23,7 +23,6 @@ class AuthService {
 
   /// REGISTER
   static Future<void> register({
-    required int colorId,
     required String email,
     required String name,
     required String password,
@@ -33,7 +32,6 @@ class AuthService {
     final res = await ApiService.post(
       '/auth/register',
       {
-        "color_id": colorId,
         "email": email,
         "name": name,
         "password": password,

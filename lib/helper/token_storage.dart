@@ -7,6 +7,7 @@ class TokenStorage {
   static const _refreshKey = "refresh_token";
   static const _userIdKey = "user_id";
   static const _tokenTypeKey = "token_type";
+  static const _loginTimeKey = "login_time";
 
   static Future<void> saveTokens({
     required String accessToken,
@@ -18,23 +19,33 @@ class TokenStorage {
     await _storage.write(key: _refreshKey, value: refreshToken);
     await _storage.write(key: _userIdKey, value: userId.toString());
     await _storage.write(key: _tokenTypeKey, value: tokenType);
+
+    // ⏱ stocke heure login
+    await _storage.write(
+      key: _loginTimeKey,
+      value: DateTime.now().millisecondsSinceEpoch.toString(),
+    );
   }
 
-  static Future<String?> getAccessToken() async =>
+  static Future<String?> getAccessToken() =>
       _storage.read(key: _accessKey);
 
-  static Future<String?> getRefreshToken() async =>
+  static Future<String?> getRefreshToken() =>
       _storage.read(key: _refreshKey);
 
-  static Future<String?> getTokenType() async =>
+  static Future<String?> getTokenType() =>
       _storage.read(key: _tokenTypeKey);
 
   static Future<int?> getUserId() async {
-    final value = await _storage.read(key: _userIdKey);
-    return value != null ? int.tryParse(value) : null;
+    final v = await _storage.read(key: _userIdKey);
+    return v != null ? int.tryParse(v) : null;
   }
 
-  static Future<void> clear() async {
-    await _storage.deleteAll();
+  static Future<DateTime?> getLoginTime() async {
+    final v = await _storage.read(key: _loginTimeKey);
+    if (v == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(int.parse(v));
   }
+
+  static Future<void> clear() => _storage.deleteAll();
 }
