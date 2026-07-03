@@ -1,4 +1,5 @@
-import 'api_service.dart';
+import 'group_service.dart';
+import 'availability_service.dart';
 
 class UserService {
   /// Récupère :
@@ -6,12 +7,15 @@ class UserService {
   /// - dates
   /// - availability
   static Future<Map<String, dynamic>> loadUserDashboard(int userId) async {
-    final groups = await ApiService.get('/users/$userId/groups');
+    if (userId <= 0) {
+      throw Exception("Invalid user ID");
+    }
 
-    final dates = await ApiService.get('/users/$userId/dates');
+    final groups = await GroupService.getUserGroups(userId);
 
-    final availability =
-        await ApiService.get('/users/$userId/availability');
+    final dates = await AvailabilityService.getUserDate(userId);
+
+    final availability = await AvailabilityService.getUserAvailability(userId);
 
     return {
       "groups": groups,

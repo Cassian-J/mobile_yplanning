@@ -15,13 +15,21 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   final controller = UserController();
   final authController = AuthController();
+
   bool menuOpen = false;
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
+
     controller.loadUserData(widget.userId).then((_) {
-      setState(() {});
+      if (!mounted) return;
+      setState(() => loading = false);
+    }).catchError((e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      debugPrint("ERROR loadUserData: $e");
     });
   }
 
@@ -30,8 +38,7 @@ class _UserPageState extends State<UserPage> {
 
     if (!mounted) return;
 
-    Navigator.pushAndRemoveUntil(
-      context,
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
     );
@@ -42,16 +49,14 @@ class _UserPageState extends State<UserPage> {
     return Scaffold(
       body: Stack(
         children: [
-          /// ===== MAIN CONTENT (AGENDA) =====
+          /// ================= MAIN =================
           Column(
             children: [
               AppBar(
                 title: const Text("Agenda"),
                 leading: IconButton(
                   icon: const Icon(Icons.menu),
-                  onPressed: () {
-                    setState(() => menuOpen = true);
-                  },
+                  onPressed: () => setState(() => menuOpen = true),
                 ),
                 actions: [
                   IconButton(
@@ -62,35 +67,26 @@ class _UserPageState extends State<UserPage> {
               ),
 
               Expanded(
-                child: ListView.builder(
-                  itemCount: controller.dates.length,
-                  itemBuilder: (context, index) {
-                    final d = controller.dates[index];
+                child: loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : controller.dates.isEmpty
+                        ? const Center(child: Text("Aucune date"))
+                        : ListView.builder(
+                            itemCount: controller.dates.length,
+                            itemBuilder: (context, index) {
+                              final d = controller.dates[index];
 
-                    final color = d["color"]?["hex_code"] ?? "#000000";
-
-                    return Container(
-                      margin: const EdgeInsets.all(8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Color(int.parse(color.replaceFirst('#', '0xff'))),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(d["title"]),
-                    );
-                  },
-                ),
-              ),
-
-              /// bouton ajouter date
-              ElevatedButton(
-                onPressed: () => _openAddDatePopup(),
-                child: const Text("Ajouter une date"),
+                              final title = d.title; // ✅ Freezed
+                              return ListTile(
+                                title: Text(title),
+                              );
+                            },
+                          ),
               ),
             ],
           ),
 
-          /// ===== BURGER MENU =====
+          /// ================= BURGER MENU =================
           if (menuOpen)
             Positioned.fill(
               child: Material(
@@ -106,41 +102,40 @@ class _UserPageState extends State<UserPage> {
                           title: const Text("Groupes"),
                           leading: IconButton(
                             icon: const Icon(Icons.close),
-                            onPressed: () {
-                              setState(() => menuOpen = false);
-                            },
+                            onPressed: () =>
+                                setState(() => menuOpen = false),
                           ),
                         ),
 
-                        /// GROUP LIST
                         Expanded(
-                          child: ListView.builder(
-                            itemCount: controller.groups.length,
-                            itemBuilder: (context, index) {
-                              final g = controller.groups[index];
+                          child: controller.groups.isEmpty
+                              ? const Center(child: Text("Aucun groupe"))
+                              : ListView.builder(
+                                  itemCount: controller.groups.length,
+                                  itemBuilder: (context, index) {
+                                    final g = controller.groups[index];
 
-                              return ListTile(
-                                title: Text(g["name"]),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => GroupPage(
-                                        groupId: g["id"],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
+                                    return ListTile(
+                                      title: Text(g.name), // ✅ Freezed
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => GroupPage(
+                                              groupId: g.id, // ✅ Freezed
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
                         ),
 
-                        /// CREATE GROUP BUTTON
                         Padding(
                           padding: const EdgeInsets.all(12),
                           child: ElevatedButton(
-                            onPressed: () => _openCreateGroupPopup(),
+                            onPressed: _openCreateGroupPopup,
                             child: const Text("Créer un groupe"),
                           ),
                         ),
@@ -151,16 +146,6 @@ class _UserPageState extends State<UserPage> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  void _openAddDatePopup() {
-    showDialog(
-      context: context,
-      builder: (_) => const AlertDialog(
-        title: Text("Ajouter date"),
-        content: Text("TODO form date"),
       ),
     );
   }

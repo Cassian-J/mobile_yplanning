@@ -40,12 +40,11 @@ Future<void> login() async {
     // 🔥 récupération userId
     final userId = await TokenStorage.getUserId();
 
-    if (userId == null) {
+    if (userId == null || userId <= 0) {
       throw Exception("UserId introuvable");
     }
 
     if (!mounted) return;
-
     // 🔥 navigation
     Navigator.pushReplacement(
       context,

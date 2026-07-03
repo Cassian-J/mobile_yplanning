@@ -1,6 +1,9 @@
 import '../services/group_service.dart';
 import '../services/availability_service.dart';
 import '../services/api_service.dart';
+import '../models/group.dart';
+import '../models/date.dart';
+import '../models/availability.dart';
 
 class UserController {
   List groups = [];
@@ -14,17 +17,28 @@ class UserController {
     loading = true;
 
     try {
-      groups = await GroupService.getUserGroups(userId);
+      final rawGroups = await GroupService.getUserGroups(userId);
 
-      dates = await ApiService.get('/users/$userId/dates');
+      groups = List<Group>.from(
+        rawGroups.where((e) => e != null),
+      );
 
-      availability =
-          await AvailabilityService.getUserAvailability(userId);
+      final rawDates = await AvailabilityService.getUserDate(userId);
+
+      dates = List<Date>.from(
+        rawDates.where((e) => e != null),
+      );
+
+      final rawAvailability = await AvailabilityService.getUserAvailability(userId);
+
+      availability = List<Availability>.from(
+        rawAvailability.where((e) => e != null),
+      );
     } catch (e) {
       throw Exception("Erreur loadUserData: $e");
+    } finally {
+      loading = false;
     }
-
-    loading = false;
   }
 
   /// CREATE OR UPDATE AVAILABILITY
@@ -44,7 +58,7 @@ class UserController {
       });
     } else {
       await AvailabilityService.updateAvailability(
-        existing[0]["id"],
+        existing[0].id,
         {
           "date_begin": begin,
           "date_end": end,

@@ -26,7 +26,7 @@ class ApiService {
       final type = await TokenStorage.getTokenType() ?? "Bearer";
 
       if (token != null) {
-        headers["Authorization"] = "$type $token";
+        headers["Authorization"] = "Bearer $token";
       }
     }
 
@@ -49,9 +49,11 @@ class ApiService {
     final ok = await _checkAuth(true);
     if (!ok) throw Exception("NOT_AUTH");
 
+    final headers = await _headers(authenticated: true);
+
     final response = await http.get(
       _buildUri(endpoint),
-      headers: await _headers(authenticated: true),
+      headers: headers,
     );
 
     return _handle(response, endpoint, "GET");
